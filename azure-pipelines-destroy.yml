@@ -1,0 +1,78 @@
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - group: terraform-secrets
+
+stages:
+  - stage: Dev_Destroy
+    displayName: dev_destroy
+    jobs:
+      - job: tf_destroy
+        displayName: tf_destroy
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: TerraformInstaller@1
+            displayName: tf_install
+            inputs:
+              terraformVersion: 'latest'
+          - task: TerraformTask@5
+            displayName: tf_init
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/environments/dev'
+              backendServiceArm: 'Azure-upgraded-SN'
+              backendAzureRmResourceGroupName: 'terraform-state-rg'
+              backendAzureRmStorageAccountName: 'devtfstate5728'
+              backendAzureRmContainerName: 'tfstate'
+              backendAzureRmKey: 'terraform.tfstate'
+          - task: TerraformTask@5
+            displayName: tf_destroy
+            inputs:
+              provider: 'azurerm'
+              command: 'destroy'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/environments/dev'
+              commandOptions: '--auto-approve'
+              environmentServiceNameAzureRM: 'Azure-upgraded-SN'
+            env:
+              TF_VAR_ssh_public_key: $(ssh_public_key)
+
+  - stage: Stage_Destroy
+    displayName: stage_destroy
+    jobs:
+      - job: tf_destroy
+        displayName: tf_destroy
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: TerraformInstaller@1
+            displayName: tf_install
+            inputs:
+              terraformVersion: 'latest'
+          - task: TerraformTask@5
+            displayName: tf_init
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/environments/stage'
+              backendServiceArm: 'Azure-upgraded-SN'
+              backendAzureRmResourceGroupName: 'terraform-state-rg'
+              backendAzureRmStorageAccountName: 'stagetfstate5681'
+              backendAzureRmContainerName: 'tfstate'
+              backendAzureRmKey: 'terraform.tfstate'
+          - task: TerraformTask@5
+            displayName: tf_destroy
+            inputs:
+              provider: 'azurerm'
+              command: 'destroy'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/environments/stage'
+              commandOptions: '--auto-approve'
+              environmentServiceNameAzureRM: 'Azure-upgraded-SN'
+            env:
+              TF_VAR_ssh_public_key: $(ssh_public_key)
+
+          
